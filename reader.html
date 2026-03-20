@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading — NovelNest</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <div class="reader-toolbar">
+        <a href="index.html">NovelNest</a>
+        <span class="sep">/</span>
+        <a href="#" id="novel-link">Novel</a>
+        <span class="sep">/</span>
+        <span class="chapter-name" id="toolbar-chapter">…</span>
+        <div class="reader-settings">
+          <button class="size-btn" id="smaller">A-</button>
+          <button class="size-btn" id="bigger">A+</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="reader-body" id="reader-body">
+    <div class="loading">Loading chapter…</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const chapterId = params.get('id');
+    const novelId = params.get('novel');
+
+    if (!chapterId) { window.location.href = 'index.html'; }
+
+    let currentFontSize = 17;
+    let currentChapter = null;
+    let allChapters = [];
+
+    /* Font size controls */
+    document.getElementById('bigger').addEventListener('click', () => {
+      currentFontSize = Math.min(currentFontSize + 1, 24);
+      document.querySelector('.chapter-content').style.fontSize = currentFontSize + 'px';
+    });
+    document.getElementById('smaller').addEventListener('click', () => {
+      currentFontSize = Math.max(currentFontSize - 1, 13);
+      document.querySelector('.chapter-content') &&
+        (document.querySelector('.chapter-content').style.fontSize = currentFontSize + 'px');
+    });
+
+    async function loadChapter() {
+      try {
+        const [chapterRes, chaptersRes] = await Promise.all([
+          fetch('/api/chapter/' + chapterId),
+          novelId ? fetch('/api/chapters/' + novelId) : Promise.resolve({ json: () => [] })
+        ]);
+
+        const chapter = await chapterRes.json();
+        allChapters = await chaptersRes.json();
+
+        if (!chapter) { window.location.href = 'index.html'; return; }
+
+        currentChapter = chapter;
+        document.title = chapter.title + ' — NovelNest';
+
+        /* Update toolbar */
+        document.getElementById('toolbar-chapter').textContent =
+          'Chapter ' + chapter.chapter_number + ': ' + chapter.title;
+        if (novelId) {
+          document.getElementById('novel-link').href = 'novel.html?id=' + novelId;
+        }
+
+        /* Render */
+        renderChapter(chapter);
+
+      } catch (err) {
+        document.getElementById('reader-body').innerHTML =
+          '<p class="error">Could not load chapter.</p>';
+      }
+    }
+
+    function renderChapter(chapter) {
+      /* Turn plain text into paragraphs (split on blank lines) */
+      const paragraphs = chapter.content
+        .split(/\n\s*\n/)
+        .map(p => p.trim())
+        .filter(p => p.length)
+        .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+        .join('');
+
+      /* Find prev/next chapters */
+      const idx = allChapters.findIndex(c => c.id === chapter.id);
+      const prev = allChapters[idx - 1];
+      const next = allChapters[idx + 1];
+
+      const prevHref = prev ? `reader.html?id=${prev.id}&novel=${novelId}` : '#';
+      const nextHref = next ? `reader.html?id=${next.id}&novel=${novelId}` : '#';
+
+      document.getElementById('reader-body').innerHTML = `
+        <h2>Chapter ${chapter.chapter_number}: ${chapter.title}</h2>
+        <p class="chapter-meta">${allChapters.length ? `Chapter ${chapter.chapter_number} of ${allChapters.length}` : ''}</p>
+        <div class="chapter-content" style="font-size:${currentFontSize}px">${paragraphs}</div>
+        <div class="reader-nav">
+          <a href="${prevHref}" class="nav-btn ${!prev ? 'disabled' : ''}">← Previous</a>
+          <a href="novel.html?id=${novelId}" class="nav-btn">Chapter List</a>
+          <a href="${nextHref}" class="nav-btn ${!next ? 'disabled' : ''}">Next →</a>
+        </div>`;
+    }
+
+    loadChapter();
+  </script>
+
+</body>
+</html>

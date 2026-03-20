@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Novel — NovelNest</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo">Novel<span>Nest</span></a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <a href="index.html" class="back-link">← Back to directory</a>
+
+    <!-- Novel hero section -->
+    <div class="novel-hero" id="novel-hero">
+      <div class="loading">Loading…</div>
+    </div>
+
+    <!-- Chapter list -->
+    <div class="chapter-list" id="chapter-section" style="display:none">
+      <h2 id="chapter-count-title">Chapters</h2>
+      <div id="chapter-list"></div>
+    </div>
+
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const novelId = params.get('id');
+
+    if (!novelId) {
+      window.location.href = 'index.html';
+    }
+
+    async function loadNovel() {
+      try {
+        const [novelRes, chaptersRes] = await Promise.all([
+          fetch('/api/novel/' + novelId),
+          fetch('/api/chapters/' + novelId)
+        ]);
+
+        const novel = await novelRes.json();
+        const chapters = await chaptersRes.json();
+
+        if (!novel) { window.location.href = 'index.html'; return; }
+
+        document.title = novel.title + ' — NovelNest';
+        renderHero(novel);
+        renderChapters(chapters, novel.id);
+      } catch (err) {
+        document.getElementById('novel-hero').innerHTML =
+          '<p class="error">Could not load novel.</p>';
+      }
+    }
+
+    function renderHero(novel) {
+      const hasCover = novel.cover_url && novel.cover_url.trim();
+      document.getElementById('novel-hero').innerHTML = `
+        <div class="novel-cover-large" style="${hasCover ? 'background-image:url(' + novel.cover_url + ')' : ''}">
+          ${!hasCover ? `<span class="cover-initial">${novel.title.charAt(0)}</span>` : ''}
+        </div>
+        <div class="novel-meta">
+          <h1>${novel.title}</h1>
+          <p class="author">by ${novel.author}</p>
+          <span class="genre-tag">${novel.genre || 'General'}</span>
+          <br><br>
+          <p class="novel-desc">${novel.description || 'No description provided.'}</p>
+        </div>`;
+    }
+
+    function renderChapters(chapters, novelId) {
+      const section = document.getElementById('chapter-section');
+      section.style.display = 'block';
+
+      const countTitle = document.getElementById('chapter-count-title');
+      countTitle.textContent = chapters.length + ' Chapter' + (chapters.length !== 1 ? 's' : '');
+
+      const list = document.getElementById('chapter-list');
+      if (!chapters.length) {
+        list.innerHTML = '<p class="empty">No chapters added yet.</p>';
+        return;
+      }
+
+      list.innerHTML = chapters.map(ch => `
+        <a href="reader.html?id=${ch.id}&novel=${novelId}" class="chapter-item">
+          <span class="chapter-num">Chapter ${ch.chapter_number}</span>
+          <span class="chapter-title">${ch.title}</span>
+          <span class="chapter-arrow">›</span>
+        </a>`).join('');
+    }
+
+    loadNovel();
+  </script>
+
+</body>
+</html>
