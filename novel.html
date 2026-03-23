@@ -3,102 +3,471 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Novel — NovelNest</title>
-  <link rel="stylesheet" href="style.css">
+  <title>TommyTranslates</title>
+  <script src="theme.js"></script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3831106890582078" crossorigin="anonymous"></script>
-</head>
-<body>
+  <link href="https://cdn.jsdelivr.net/npm/beercss@3.4.3/dist/cdn/beer.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/beercss@3.4.3/dist/cdn/beer.min.js" type="module"></script>
+  <style>
+    /* ── Banner hero ── */
+    .novel-banner {
+      position: relative;
+      width: 100%;
+      min-height: 320px;
+      background: var(--surface-variant);
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+    }
+    .novel-banner-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center top;
+      filter: blur(18px) brightness(0.45) saturate(1.2);
+      transform: scale(1.08);
+      z-index: 0;
+    }
+    .novel-banner-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.1) 60%, transparent 100%);
+      z-index: 1;
+    }
+    .novel-banner-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-end;
+      padding: 1.5rem 1.5rem 1.75rem;
+    }
 
-  <header class="site-header">
-    <div class="container">
-      <a href="index.html" class="logo">Novel<span>Nest</span></a>
-    </div>
+    /* ── Cover card ── */
+    .novel-cover-wrap {
+      flex-shrink: 0;
+      width: 130px;
+    }
+    @media (min-width: 600px) { .novel-cover-wrap { width: 160px; } }
+    .novel-cover-img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.55);
+      display: block;
+      background: var(--surface-variant);
+    }
+    .novel-cover-placeholder {
+      width: 100%;
+      aspect-ratio: 2/3;
+      border-radius: 10px;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--on-primary);
+      box-shadow: 0 8px 32px rgba(0,0,0,.55);
+    }
+
+    /* ── Banner text block ── */
+    .novel-banner-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .novel-banner-info h1 {
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 .35rem;
+      line-height: 1.2;
+    }
+    .novel-banner-info .author {
+      color: rgba(255,255,255,.75);
+      font-size: .9rem;
+      margin: 0 0 .6rem;
+    }
+    .banner-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .4rem;
+    }
+    .banner-tag {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-radius: 999px;
+      padding: .18rem .75rem;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+    .banner-tag.outline {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,.45);
+      color: rgba(255,255,255,.85);
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--outline-variant);
+      background: var(--surface);
+    }
+    .stat-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: .85rem .5rem;
+      gap: .15rem;
+      border-right: 1px solid var(--outline-variant);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--on-surface);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: .7rem;
+      color: var(--on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .stat-icon { font-size: 1.1rem; color: var(--primary); }
+
+    /* ── Synopsis card ── */
+    .synopsis-card {
+      background: var(--surface);
+      border-radius: 12px;
+      margin: 1rem 0;
+    }
+    .synopsis-text {
+      color: var(--on-surface-variant);
+      line-height: 1.75;
+      font-size: .95rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      transition: all .3s;
+    }
+    .synopsis-text.expanded {
+      -webkit-line-clamp: unset;
+      display: block;
+    }
+    .synopsis-toggle {
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 600;
+      padding: .4rem 0 0;
+      display: block;
+    }
+
+    /* ── Action buttons ── */
+    .action-row {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin: .5rem 0 1.25rem;
+    }
+    .action-row .btn-fill { flex: 1; min-width: 140px; }
+
+    /* ── Chapter list ── */
+    .chapter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 .6rem;
+    }
+    .chapter-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .chapter-count-badge {
+      background: var(--secondary-container);
+      color: var(--on-secondary-container);
+      border-radius: 999px;
+      padding: .15rem .7rem;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+    .chapter-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .8rem 1rem;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--on-surface);
+      background: var(--surface);
+      margin-bottom: .4rem;
+      transition: background .18s;
+    }
+    .chapter-item:hover { background: var(--surface-variant); }
+    .chapter-num-badge {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-container);
+      border-radius: 6px;
+      padding: .2rem .55rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .chapter-title-text {
+      flex: 1;
+      font-size: .9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chapter-meta {
+      font-size: .75rem;
+      color: var(--on-surface-variant);
+      white-space: nowrap;
+    }
+    .chapter-arrow {
+      color: var(--on-surface-variant);
+      flex-shrink: 0;
+    }
+
+    /* ── Skeleton shimmer ── */
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface-variant) 25%, var(--outline-variant) 50%, var(--surface-variant) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+      border-radius: 6px;
+    }
+
+    /* ── Main spacing ── */
+    main.page-body { padding-top: 56px; /* header height */ }
+    .page-inner { max-width: none; margin: 0 auto; padding: 0 0 3rem; }
+    .section-pad { padding: 0 1rem; }
+  </style>
+</head>
+<body class="light">
+
+  <!-- ── Header ── -->
+  <header class="primary-container fixed top" style="z-index:100">
+    <nav class="padding">
+      <a href="index.html" style="text-decoration:none">
+        <h5 class="no-margin on-primary-text">Tommy <b>Translates</b></h5>
+      </a>
+      <div class="max"></div>
+<button class="circle large transparent" onclick="toggleTheme()">   
+       <i class="on-primary-text">dark_mode</i>
+      </button>
+    </nav>
   </header>
 
-  <main class="container">
+  <!-- ── Page body ── zzz-->
+  <main class="page-body responsive">
+    <div class="page-inner">
 
-    <a href="index.html" class="back-link">← Back to directory</a>
+      <!-- Banner hero -->
+      <div id="novel-banner" class="novel-banner">
+        <!-- Skeleton state -->
+        <div id="banner-skeleton" style="width:100%;padding:1.5rem 1.5rem 1.75rem;display:flex;gap:1.5rem;align-items:flex-end">
+          <div class="skeleton" style="width:130px;aspect-ratio:2/3;border-radius:10px;flex-shrink:0"></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:.6rem">
+            <div class="skeleton" style="height:1.6rem;width:70%"></div>
+            <div class="skeleton" style="height:1rem;width:40%"></div>
+            <div class="skeleton" style="height:1.4rem;width:30%;border-radius:999px"></div>
+          </div>
+        </div>
+      </div>
 
-    <!-- Novel hero section -->
-    <div class="novel-hero" id="novel-hero">
-      <div class="loading">Loading…</div>
+      <!-- Stats row -->
+      <div class="stats-row" id="stats-row" style="display:none">
+        <div class="stat-item">
+          <i class="stat-icon">menu_book</i>
+          <span class="stat-value" id="stat-chapters">—</span>
+          <span class="stat-label">Chapters</span>
+        </div>
+        <div class="stat-item">
+          <i class="stat-icon">visibility</i>
+          <span class="stat-value" id="stat-views">—</span>
+          <span class="stat-label">Views</span>
+        </div>
+        <div class="stat-item">
+          <i class="stat-icon">schedule</i>
+          <span class="stat-value" id="stat-status">—</span>
+          <span class="stat-label">Status</span>
+        </div>
+        <div class="stat-item">
+          <i class="stat-icon">star</i>
+          <span class="stat-value" id="stat-rating">—</span>
+          <span class="stat-label">Rating</span>
+        </div>
+      </div>
+
+      <!-- Synopsis + actions -->
+      <div class="section-pad" id="meta-section" style="display:none">
+
+        <!-- Action buttons -->
+        <div class="action-row" style="margin-top:1rem">
+          <a id="btn-first-chapter" href="#" class="btn-fill button primary">
+            <i>play_arrow</i> Start Reading
+          </a>
+          <button class="btn-fill button border">
+            <i>bookmark_add</i> Bookmark
+          </button>
+        </div>
+
+        <!-- Synopsis -->
+        <div class="synopsis-card padding">
+          <h6 style="margin:0 0 .5rem;font-weight:700">Synopsis</h6>
+          <p class="synopsis-text" id="synopsis-text">Loading…</p>
+          <button class="synopsis-toggle responsive" id="synopsis-toggle" onclick="toggleSynopsis()">Show more ▾</button>
+        </div>
+      </div>
+
+      <!-- Chapter list -->
+      <div class="section-pad" id="chapters-section" style="display:none;margin-top:.5rem">
+        <div class="chapter-header">
+          <h2>Chapters</h2>
+          <span class="chapter-count-badge" id="chapter-count-badge">0</span>
+        </div>
+        <div id="chapter-list"></div>
+      </div>
+
     </div>
-
-    <!-- Chapter list -->
-    <div class="chapter-list" id="chapter-section" style="display:none">
-      <h2 id="chapter-count-title">Chapters</h2>
-      <div id="chapter-list"></div>
-    </div>
-
   </main>
 
+  <script src="fetch-proxy.js"></script>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const novelId = params.get('id');
+    const params   = new URLSearchParams(window.location.search);
+    const novelId  = params.get('id');
+    if (!novelId) window.location.href = 'index.html';
 
-    if (!novelId) {
-      window.location.href = 'index.html';
+    /* ── synopsis expand/collapse ── */
+    let synopsisExpanded = false;
+    function toggleSynopsis() {
+      synopsisExpanded = !synopsisExpanded;
+      const el = document.getElementById('synopsis-text');
+      const btn = document.getElementById('synopsis-toggle');
+      el.classList.toggle('expanded', synopsisExpanded);
+      btn.textContent = synopsisExpanded ? 'Show less ▴' : 'Show more ▾';
     }
 
-    async function loadNovel() {
-      try {
-        const [novelRes, chaptersRes] = await Promise.all([
-          fetch('/api/novel/' + novelId),
-          fetch('/api/chapters/' + novelId)
-        ]);
-
-        const novel = await novelRes.json();
-        const chapters = await chaptersRes.json();
-
-        if (!novel) { window.location.href = 'index.html'; return; }
-
-        document.title = novel.title + ' — NovelNest';
-        renderHero(novel);
-        renderChapters(chapters, novel.id);
-      } catch (err) {
-        document.getElementById('novel-hero').innerHTML =
-          '<p class="error">Could not load novel.</p>';
-      }
+    /* ── format large numbers ── */
+    function fmtNum(n) {
+      if (!n && n !== 0) return '—';
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+      if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
+      return String(n);
     }
 
-    function renderHero(novel) {
+    /* ── render banner ── */
+    function renderBanner(novel) {
       const hasCover = novel.cover_url && novel.cover_url.trim();
-      document.getElementById('novel-hero').innerHTML = `
-        <div class="novel-cover-large" style="${hasCover ? 'background-image:url(' + novel.cover_url + ')' : ''}">
-          ${!hasCover ? `<span class="cover-initial">${novel.title.charAt(0)}</span>` : ''}
-        </div>
-        <div class="novel-meta">
-          <h1>${novel.title}</h1>
-          <p class="author">by ${novel.author}</p>
-          <span class="genre-tag">${novel.genre || 'General'}</span>
-          <br><br>
-          <p class="novel-desc">${novel.description || 'No description provided.'}</p>
+      const banner   = document.getElementById('novel-banner');
+
+      banner.innerHTML = `
+        ${hasCover ? `<div class="novel-banner-bg" style="background-image:url(${novel.cover_url})"></div>` : ''}
+        <div class="novel-banner-overlay"></div>
+        <div class="novel-banner-content">
+          <div class="novel-cover-wrap">
+            ${hasCover
+              ? `<img class="novel-cover-img" src="${novel.cover_url}" alt="${novel.title} cover">`
+              : `<div class="novel-cover-placeholder">${novel.title.charAt(0)}</div>`}
+          </div>
+          <div class="novel-banner-info">
+            <h1>${novel.title}</h1>
+            <p class="author">by ${novel.author}</p>
+            <div class="banner-tags">
+              ${novel.genre ? `<span class="banner-tag">${novel.genre}</span>` : ''}
+              ${(novel.tags || []).slice(0,4).map(t => `<span class="banner-tag outline">${t}</span>`).join('')}
+            </div>
+          </div>
         </div>`;
     }
 
+    /* ── render stats ── */
+    function renderStats(novel, chapterCount) {
+      document.getElementById('stat-chapters').textContent = chapterCount;
+      document.getElementById('stat-views').textContent    = fmtNum(novel.views);
+      document.getElementById('stat-status').textContent   = novel.status  || 'Ongoing';
+      document.getElementById('stat-rating').textContent   = novel.rating  ? novel.rating.toFixed(1) : '—';
+      document.getElementById('stats-row').style.display   = 'flex';
+    }
+
+    /* ── render synopsis + actions ── */
+    function renderMeta(novel, firstChapterId) {
+      document.getElementById('synopsis-text').textContent = novel.description || 'No description provided.';
+      if (firstChapterId) {
+        document.getElementById('btn-first-chapter').href =
+          `reader.html?id=${firstChapterId}&novel=${novel.id}`;
+      }
+      document.getElementById('meta-section').style.display = 'block';
+    }
+
+    /* ── render chapter list ── */
     function renderChapters(chapters, novelId) {
-      const section = document.getElementById('chapter-section');
+      const section = document.getElementById('chapters-section');
       section.style.display = 'block';
 
-      const countTitle = document.getElementById('chapter-count-title');
-      countTitle.textContent = chapters.length + ' Chapter' + (chapters.length !== 1 ? 's' : '');
+      document.getElementById('chapter-count-badge').textContent =
+        chapters.length + ' Chapter' + (chapters.length !== 1 ? 's' : '');
 
       const list = document.getElementById('chapter-list');
       if (!chapters.length) {
-        list.innerHTML = '<p class="empty">No chapters added yet.</p>';
+        list.innerHTML = '<p style="color:var(--on-surface-variant);padding:.5rem 0">No chapters added yet.</p>';
         return;
       }
-
       list.innerHTML = chapters.map(ch => `
         <a href="reader.html?id=${ch.id}&novel=${novelId}" class="chapter-item">
-          <span class="chapter-num">Chapter ${ch.chapter_number}</span>
-          <span class="chapter-title">${ch.title}</span>
-          <span class="chapter-arrow">›</span>
+          <span class="chapter-num-badge">Ch. ${ch.chapter_number}</span>
+          <span class="chapter-title-text">${ch.title}</span>
+          ${ch.created_at ? `<span class="chapter-meta">${new Date(ch.created_at).toLocaleDateString('en',{month:'short',day:'numeric'})}</span>` : ''}
+          <span class="chapter-arrow">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 4L13 10L7 16"/>
+            </svg>
+          </span>
         </a>`).join('');
+    }
+
+    /* ── main load ── */
+    async function loadNovel() {
+      try {
+        const [novelRes, chaptersRes] = await Promise.all([
+          fetch('/api/novel/'    + novelId),
+          fetch('/api/chapters/' + novelId)
+        ]);
+        const novel    = await novelRes.json();
+        const chapters = await chaptersRes.json();
+
+        if (!novel) { window.location.href = 'index.html'; return; }
+        document.title = novel.title + ' — TommyTranslates';
+
+        renderBanner(novel);
+        renderStats(novel, chapters.length);
+        renderMeta(novel, chapters[0]?.id);
+        renderChapters(chapters, novel.id);
+
+      } catch (err) {
+        document.getElementById('novel-banner').innerHTML =
+          '<p style="padding:2rem;color:var(--error)">Could not load novel.</p>';
+      }
     }
 
     loadNovel();
   </script>
-
 </body>
 </html>
