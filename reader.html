@@ -72,15 +72,8 @@ document.getElementById('smaller').addEventListener('click', () => {
 
 async function loadChapter() {
   try {
-    const [chapterRes, chaptersRes] = await Promise.all([
-      fetch('/api/chapter/' + chapterId),
-      novelId
-        ? fetch('/api/chapters/' + novelId)
-        : Promise.resolve({ json: () => [] })
-    ]);
-
+    const chapterRes = await fetch('/api/chapter/' + chapterId);
     const chapter = await chapterRes.json();
-    allChapters = await chaptersRes.json();
 
     if (!chapter) {
       window.location.href = 'index.html';
@@ -89,7 +82,6 @@ async function loadChapter() {
 
     currentChapter = chapter;
     document.title = chapter.title + ' - ReaderPal';
-
     /* Update toolbar */
     // document.getElementById('toolbar-chapter').textContent = chapter.title;
 
