@@ -3,107 +3,278 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NovelNest — Read Free Novels Online</title>
-  <link rel="stylesheet" href="style.css">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3831106890582078"
-     crossorigin="anonymous"></script>
-</head>
-<body>
+  <title>TommyTranslates</title>
+  <script src="theme.js"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3831106890582078" crossorigin="anonymous"></script>
+  <link href="https://cdn.jsdelivr.net/npm/beercss@3.4.3/dist/cdn/beer.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/beercss@3.4.3/dist/cdn/beer.min.js" type="module"></script>
+  <style>
+    /* ── Novel card ── */
+    .novel-card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      height: 180px;
+      display: flex;
+      text-decoration: none;
+      color: inherit;
+      background: var(--surface-variant);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .novel-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 32px rgba(0,0,0,.18);
+    }
 
-  <header class="site-header">
-    <div class="container">
-      <div class="logo">Novel<span>Nest</span></div>
-      <div class="search-wrap">
-        <input type="text" id="search" placeholder="Search novels or authors…">
+    /* blurred bg */
+    .card-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(14px) brightness(0.38) saturate(1.3);
+      transform: scale(1.1);
+      z-index: 0;
+    }
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(0,0,0,.65) 0%, rgba(0,0,0,.15) 60%, transparent 100%);
+      z-index: 1;
+    }
+
+    /* cover thumbnail */
+    .card-cover {
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+      width: 108px;
+      margin: 14px 0 14px 14px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,.5);
+    }
+    .card-cover img,
+    .card-cover-placeholder {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-cover-placeholder {
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--on-primary);
+    }
+
+    /* info */
+    .card-info {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: .25rem;
+      min-width: 0;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0;
+      line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-author {
+      font-size: .78rem;
+      color: rgba(255,255,255,.65);
+      margin: 0;
+    }
+    .card-desc {
+      font-size: .78rem;
+      color: rgba(255,255,255,.75);
+      margin: .35rem 0 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.55;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .3rem;
+      margin-top: .45rem;
+    }
+    .card-tag {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-radius: 999px;
+      padding: .1rem .6rem;
+      font-size: .68rem;
+      font-weight: 600;
+    }
+    .card-tag.outline {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,.4);
+      color: rgba(255,255,255,.8);
+    }
+
+    /* ── Grid ── */
+    .novels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1rem;
+      margin-top: .75rem;
+    }
+    @media (max-width: 480px) {
+      .novels-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Skeleton shimmer ── */
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position:  600px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface-variant) 25%, var(--outline-variant) 50%, var(--surface-variant) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+      border-radius: 8px;
+    }
+    .skeleton-card {
+      height: 180px;
+      border-radius: 12px;
+    }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .25rem;
+    }
+    .section-header h6 { margin: 0; font-weight: 700; }
+    .count-chip {
+      background: var(--secondary-container);
+      color: var(--on-secondary-container);
+      border-radius: 999px;
+      padding: .15rem .7rem;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+
+    /* ── Main spacing ── */
+    main { padding-top: 72px !important; max-width: 900px; margin: 0 auto; padding-bottom: 2rem; }
+  </style>
+</head>
+<body class="light">
+
+  <!-- ── Header ── -->
+  <header class="primary-container fixed top" style="z-index:100">
+    <nav class="padding">
+      <a href="index.html" style="text-decoration:none">
+        <h5 class="no-margin on-primary-text">Tommy <b>Translates</b></h5>
+      </a>
+      <div class="max"></div>
+      <div class="field border round no-margin" style="width:220px">
+        <input class="input" type="text" id="search" placeholder="Search novels…">
       </div>
-    </div>
+<button class="circle transparent" onclick="toggleTheme()">
+  <i class="on-primary-text">dark_mode</i>
+</button>
+      </button>
+    </nav>
   </header>
 
-  <main class="container">
-
-    <div class="filters" id="filters">
-      <button class="filter-btn active" data-genre="all">All</button>
-      <button class="filter-btn" data-genre="fantasy">Fantasy</button>
-      <button class="filter-btn" data-genre="romance">Romance</button>
-      <button class="filter-btn" data-genre="sci-fi">Sci-Fi</button>
-      <button class="filter-btn" data-genre="thriller">Thriller</button>
-      <button class="filter-btn" data-genre="action">Action</button>
-      <button class="filter-btn" data-genre="general">General</button>
+  <!-- ── Main ── -->
+  <main class="padding">
+    <div class="section-header">
+      <h6 id="section-label">All Novels</h6>
+      <span class="count-chip" id="count-chip" style="display:none"></span>
     </div>
-
-    <p class="section-title" id="section-label">All Novels</p>
-    <div class="novel-grid" id="novel-grid">
-      <div class="loading">Loading novels…</div>
+    <div class="novels-grid" id="novel-grid">
+      <!-- Skeleton placeholders -->
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
     </div>
-
   </main>
 
+  <script src="fetch-proxy.js"></script>
   <script>
     let allNovels = [];
 
     async function loadNovels() {
       try {
-        const res = await fetch('/api/novels');
-        allNovels = await res.json();
+        const res  = await fetch('/api/novels');
+        allNovels  = await res.json();
         renderNovels(allNovels);
       } catch (err) {
         document.getElementById('novel-grid').innerHTML =
-          '<p class="error">Could not load novels. Check your Cloudflare environment variables.</p>';
+          '<p style="color:var(--error)">Could not load novels. Check your Cloudflare environment variables.</p>';
       }
     }
 
     function renderNovels(novels) {
-      const grid = document.getElementById('novel-grid');
-      document.getElementById('section-label').textContent =
-        novels.length + ' novel' + (novels.length !== 1 ? 's' : '');
+      const grid  = document.getElementById('novel-grid');
+      const chip  = document.getElementById('count-chip');
+      const label = document.getElementById('section-label');
+
+      label.textContent = 'All Novels';
+      chip.textContent  = novels.length + ' novel' + (novels.length !== 1 ? 's' : '');
+      chip.style.display = 'inline-block';
 
       if (!novels.length) {
-        grid.innerHTML = '<p class="empty">No novels yet — add one in your Supabase table!</p>';
+        grid.innerHTML = '<p style="color:var(--on-surface-variant)">No novels yet.</p>';
         return;
       }
 
       grid.innerHTML = novels.map(n => {
         const hasCover = n.cover_url && n.cover_url.trim();
-        const coverStyle = hasCover ? `background-image:url('${n.cover_url}')` : '';
+        const genre    = n.genre || 'General';
         return `
           <a href="novel.html?id=${n.id}" class="novel-card">
-            <div class="cover" style="${coverStyle}">
-              ${!hasCover ? `<span class="cover-initial">${n.title.charAt(0)}</span>` : ''}
-              <span class="status-badge ${n.status || 'ongoing'}">${n.status === 'completed' ? 'Done' : 'Ongoing'}</span>
+            ${hasCover ? `<div class="card-bg" style="background-image:url(${n.cover_url})"></div>` : ''}
+            <div class="card-overlay"></div>
+            <div class="card-cover">
+              ${hasCover
+                ? `<img src="${n.cover_url}" alt="${n.title} cover">`
+                : `<div class="card-cover-placeholder">${n.title.charAt(0)}</div>`}
             </div>
             <div class="card-info">
-              <h3 class="novel-title">${n.title}</h3>
-              <p class="novel-author">by ${n.author}</p>
-              <span class="genre-tag">${n.genre || 'General'}</span>
+              <p class="card-title">${n.title}</p>
+              <p class="card-author">by ${n.author}</p>
+              <p class="card-desc">${n.description || 'No description available.'}</p>
+              <div class="card-tags">
+                <span class="card-tag">${genre}</span>
+              </div>
             </div>
           </a>`;
       }).join('');
     }
 
     /* Search */
-    document.getElementById('search').addEventListener('input', function() {
+    document.getElementById('search').addEventListener('input', function () {
       const q = this.value.toLowerCase();
-      const filtered = allNovels.filter(n =>
-        n.title.toLowerCase().includes(q) || n.author.toLowerCase().includes(q)
+      renderNovels(
+        allNovels.filter(n =>
+          n.title.toLowerCase().includes(q) || n.author.toLowerCase().includes(q)
+        )
       );
-      renderNovels(filtered);
-    });
-
-    /* Genre filter */
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        const genre = this.dataset.genre;
-        const filtered = genre === 'all'
-          ? allNovels
-          : allNovels.filter(n => (n.genre || 'General').toLowerCase() === genre);
-        renderNovels(filtered);
-      });
     });
 
     loadNovels();
   </script>
-
 </body>
 </html>
