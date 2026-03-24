@@ -3,8 +3,7 @@
 export async function onRequestGet({ env, params }) {
   try {
     const response = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/chapters?novel_id=eq.${params.novelId}&select=id,novel_id,chapter_number,title,created_at,updated_at&order=chapter_number.asc`,
-      {
+      `${env.SUPABASE_URL}/rest/v1/chapters?novel_id=eq.${params.novelId}&select=id,novel_id,chapter_number,title,created_at&order=chapter_number.asc`,      {
         headers: {
           apikey: env.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
