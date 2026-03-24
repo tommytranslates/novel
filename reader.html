@@ -49,7 +49,8 @@ const params = new URLSearchParams(window.location.search);
 const chapterId = params.get('id');
 const novelId = params.get('novel');
 
-if (!chapterId) {
+// We now require both IDs to build the navigation sequence properly
+if (!chapterId || !novelId) {
   window.location.href = 'index.html';
 }
 
@@ -70,8 +71,17 @@ document.getElementById('smaller').addEventListener('click', () => {
   if (content) content.style.fontSize = currentFontSize + 'px';
 });
 
-async function loadChapter() {
+async function loadReaderData() {
   try {
+    // 1. Fetch the optimized, lightweight chapter list for navigation
+    const chaptersRes = await fetch('/api/chapters/' + novelId);
+    allChapters = await chaptersRes.json();
+
+    if (!allChapters || allChapters.length === 0) {
+      throw new Error("No chapters found for this novel.");
+    }
+
+    // 2. Fetch the current chapter content
     const chapterRes = await fetch('/api/chapter/' + chapterId);
     const chapter = await chapterRes.json();
 
@@ -81,25 +91,25 @@ async function loadChapter() {
     }
 
     currentChapter = chapter;
-    document.title = chapter.title + ' - ReaderPal';
-    /* Update toolbar */
-    // document.getElementById('toolbar-chapter').textContent = chapter.title;
+    document.title = chapter.title + ' - TommyTranslates';
 
     if (novelId) {
-      document.getElementById('novel-link').href =
-        'novel.html?id=' + novelId;
+      document.getElementById('novel-link').href = 'novel.html?id=' + novelId;
     }
 
+    // Render the UI
     renderChapter(chapter);
+
+    // 3. Trigger background prefetching for the rolling window
+    prefetchSurroundingChapters();
 
   } catch (err) {
     document.getElementById('reader-body').innerHTML =
-      '<p class="error">Could not load chapter.</p>';
+      '<p class="error">Could not load chapter data.</p>';
   }
 }
 
 function renderChapter(chapter) {
-
   /* Convert text → paragraphs */
   const paragraphs = chapter.content
     .split(/\n\s*\n/)
@@ -108,55 +118,71 @@ function renderChapter(chapter) {
     .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
     .join('');
 
-  /* Navigation */
+  /* Navigation logic */
   const idx = allChapters.findIndex(c => c.id === chapter.id);
   const prev = allChapters[idx - 1];
   const next = allChapters[idx + 1];
 
-  const prevHref = prev
-    ? `reader.html?id=${prev.id}&novel=${novelId}`
-    : '#';
+  const prevHref = prev ? `reader.html?id=${prev.id}&novel=${novelId}` : '#';
+  const nextHref = next ? `reader.html?id=${next.id}&novel=${novelId}` : '#';
 
-  const nextHref = next
-    ? `reader.html?id=${next.id}&novel=${novelId}`
-    : '#';
-
+  // To prevent clicking when disabled, we add pointer-events: none styling to disabled states
   document.getElementById('reader-body').innerHTML = `
-
-
-
     <h2>${chapter.title}</h2>
-<br/>
+    <br/>
 
     <div class="chapter-content" style="font-size:${currentFontSize}px">
       ${paragraphs}
     </div>
 
-<nav class="reader-nav center-align paddding on-primary-container">
-  <a href="${prevHref}" class=" fill max vertical responsive ${!prev ? 'disabled' : ''}">
-    <i>arrow_back</i>
-    <span>Previous</span>
-  </a>
- 
+    <nav class="reader-nav center-align padding on-primary-container">
+      <a href="${prevHref}" class="fill max vertical responsive ${!prev ? 'disabled' : ''}" ${!prev ? 'style="pointer-events:none;"' : ''}>
+        <i>arrow_back</i>
+        <span>Previous</span>
+      </a>
+      
+      <a href="novel.html?id=${novelId}" class="fill max vertical responsive">
+        <i>list</i>
+        <span>Chapters</span>
+      </a>
 
-  <a href="novel.html?id=${novelId}" class=" fill  max vertical responsive">
-    <i>list</i>
-    <span>Chapters</span>
-  </a>
-
-  <a href="${nextHref}" class=" fill vertical max responsive ${!next ? 'disabled' : ''}">
-    <span>Next</span>
-    <i>arrow_forward</i>
-  </a>
-</nav>
+      <a href="${nextHref}" class="fill vertical max responsive ${!next ? 'disabled' : ''}" ${!next ? 'style="pointer-events:none;"' : ''}>
+        <span>Next</span>
+        <i>arrow_forward</i>
+      </a>
+    </nav>
   `;
 }
 
+function prefetchSurroundingChapters() {
+  const idx = allChapters.findIndex(c => c.id === chapterId);
+  if (idx === -1) return;
 
+  // Defines the rolling window: 1 previous, 3 future chapters
+  const prefetchIndices = [
+    idx - 1,
+    idx + 1,
+    idx + 2,
+    idx + 3
+  ];
+
+  prefetchIndices.forEach(i => {
+    // Check if the chapter index exists in the array
+    if (i >= 0 && i < allChapters.length) {
+      const targetId = allChapters[i].id;
+      
+      // Perform a low-priority background fetch.
+      // We don't need to do anything with the response; the browser will automatically 
+      // cache this JSON payload. When the user clicks next, it loads instantly.
+      fetch('/api/chapter/' + targetId, { priority: 'low' }).catch(err => {
+         // Silently ignore prefetch failures so it doesn't interrupt reading
+      });
+    }
+  });
+}
 
 /* INIT */
-loadChapter();
+loadReaderData();
 </script>
-
 </body>
 </html>
