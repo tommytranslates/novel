@@ -49,7 +49,6 @@ const params = new URLSearchParams(window.location.search);
 const chapterId = params.get('id');
 const novelId = params.get('novel');
 
-// We now require both IDs to build the navigation sequence properly
 if (!chapterId || !novelId) {
   window.location.href = 'index.html';
 }
@@ -58,7 +57,6 @@ let currentFontSize = 28;
 let currentChapter = null;
 let allChapters = [];
 
-/* Font size controls */
 document.getElementById('bigger').addEventListener('click', () => {
   currentFontSize = Math.min(currentFontSize + 2, 36);
   const content = document.querySelector('.chapter-content');
@@ -73,19 +71,19 @@ document.getElementById('smaller').addEventListener('click', () => {
 
 async function loadReaderData() {
   try {
-    // 1. Fetch the optimized, lightweight chapter list for navigation
-    const chaptersRes = await fetch('/api/chapters/' + novelId);
+    const [chaptersRes, chapterRes] = await Promise.all([
+      fetch('/api/chapters/' + novelId),
+      fetch('/api/chapter/' + chapterId)
+    ]);
+
     allChapters = await chaptersRes.json();
-
-    if (!allChapters || allChapters.length === 0) {
-      throw new Error("No chapters found for this novel.");
-    }
-
-    // 2. Fetch the current chapter content
-    const chapterRes = await fetch('/api/chapter/' + chapterId);
     const chapter = await chapterRes.json();
 
-    if (!chapter) {
+    if (!Array.isArray(allChapters)) {
+      throw new Error("Could not load chapter list.");
+    }
+
+    if (!chapter || !chapter.id) {
       window.location.href = 'index.html';
       return;
     }
@@ -97,20 +95,16 @@ async function loadReaderData() {
       document.getElementById('novel-link').href = 'novel.html?id=' + novelId;
     }
 
-    // Render the UI
     renderChapter(chapter);
-
-    // 3. Trigger background prefetching for the rolling window
     prefetchSurroundingChapters();
 
   } catch (err) {
     document.getElementById('reader-body').innerHTML =
-      '<p class="error">Could not load chapter data.</p>';
+      '<p style="padding:2rem;color:red">Could not load chapter: ' + err.message + '</p>';
   }
 }
 
 function renderChapter(chapter) {
-  /* Convert text → paragraphs */
   const paragraphs = chapter.content
     .split(/\n\s*\n/)
     .map(p => p.trim())
@@ -118,7 +112,6 @@ function renderChapter(chapter) {
     .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
     .join('');
 
-  /* Navigation logic */
   const idx = allChapters.findIndex(c => c.id === chapter.id);
   const prev = allChapters[idx - 1];
   const next = allChapters[idx + 1];
@@ -126,26 +119,21 @@ function renderChapter(chapter) {
   const prevHref = prev ? `reader.html?id=${prev.id}&novel=${novelId}` : '#';
   const nextHref = next ? `reader.html?id=${next.id}&novel=${novelId}` : '#';
 
-  // To prevent clicking when disabled, we add pointer-events: none styling to disabled states
   document.getElementById('reader-body').innerHTML = `
     <h2>${chapter.title}</h2>
     <br/>
-
     <div class="chapter-content" style="font-size:${currentFontSize}px">
       ${paragraphs}
     </div>
-
     <nav class="reader-nav center-align padding on-primary-container">
       <a href="${prevHref}" class="fill max vertical responsive ${!prev ? 'disabled' : ''}" ${!prev ? 'style="pointer-events:none;"' : ''}>
         <i>arrow_back</i>
         <span>Previous</span>
       </a>
-      
       <a href="novel.html?id=${novelId}" class="fill max vertical responsive">
         <i>list</i>
         <span>Chapters</span>
       </a>
-
       <a href="${nextHref}" class="fill vertical max responsive ${!next ? 'disabled' : ''}" ${!next ? 'style="pointer-events:none;"' : ''}>
         <span>Next</span>
         <i>arrow_forward</i>
@@ -158,30 +146,13 @@ function prefetchSurroundingChapters() {
   const idx = allChapters.findIndex(c => c.id === chapterId);
   if (idx === -1) return;
 
-  // Defines the rolling window: 1 previous, 3 future chapters
-  const prefetchIndices = [
-    idx - 1,
-    idx + 1,
-    idx + 2,
-    idx + 3
-  ];
-
-  prefetchIndices.forEach(i => {
-    // Check if the chapter index exists in the array
+  [idx - 1, idx + 1, idx + 2, idx + 3].forEach(i => {
     if (i >= 0 && i < allChapters.length) {
-      const targetId = allChapters[i].id;
-      
-      // Perform a low-priority background fetch.
-      // We don't need to do anything with the response; the browser will automatically 
-      // cache this JSON payload. When the user clicks next, it loads instantly.
-      fetch('/api/chapter/' + targetId, { priority: 'low' }).catch(err => {
-         // Silently ignore prefetch failures so it doesn't interrupt reading
-      });
+      fetch('/api/chapter/' + allChapters[i].id, { priority: 'low' }).catch(() => {});
     }
   });
 }
 
-/* INIT */
 loadReaderData();
 </script>
 </body>
