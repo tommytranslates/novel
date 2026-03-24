@@ -57,6 +57,29 @@ let currentFontSize = 28;
 let currentChapter = null;
 let allChapters = [];
 
+// ── In-memory chapter content cache ──
+const chapterCache = {};
+
+async function fetchChapter(id) {
+  if (chapterCache[id]) return chapterCache[id];
+  const res = await fetch('/api/chapter/' + id);
+  const data = await res.json();
+  if (data && data.id) chapterCache[id] = data;
+  return data;
+}
+
+// ── Chapter list cache (survives page loads within the same tab) ──
+async function fetchChapterList(novelId) {
+  const cacheKey = 'chapterlist_' + novelId;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const res = await fetch('/api/chapters/' + novelId);
+  const data = await res.json();
+  if (Array.isArray(data)) sessionStorage.setItem(cacheKey, JSON.stringify(data));
+  return data;
+}
+
 document.getElementById('bigger').addEventListener('click', () => {
   currentFontSize = Math.min(currentFontSize + 2, 36);
   const content = document.querySelector('.chapter-content');
@@ -71,13 +94,12 @@ document.getElementById('smaller').addEventListener('click', () => {
 
 async function loadReaderData() {
   try {
-    const [chaptersRes, chapterRes] = await Promise.all([
-      fetch('/api/chapters/' + novelId),
-      fetch('/api/chapter/' + chapterId)
+    const [chapters, chapter] = await Promise.all([
+      fetchChapterList(novelId),
+      fetchChapter(chapterId)
     ]);
 
-    allChapters = await chaptersRes.json();
-    const chapter = await chapterRes.json();
+    allChapters = chapters;
 
     if (!Array.isArray(allChapters)) {
       throw new Error("Could not load chapter list.");
@@ -116,9 +138,6 @@ function renderChapter(chapter) {
   const prev = allChapters[idx - 1];
   const next = allChapters[idx + 1];
 
-  const prevHref = prev ? `reader.html?id=${prev.id}&novel=${novelId}` : '#';
-  const nextHref = next ? `reader.html?id=${next.id}&novel=${novelId}` : '#';
-
   document.getElementById('reader-body').innerHTML = `
     <h2>${chapter.title}</h2>
     <br/>
@@ -126,7 +145,10 @@ function renderChapter(chapter) {
       ${paragraphs}
     </div>
     <nav class="reader-nav center-align padding on-primary-container">
-      <a href="${prevHref}" class="fill max vertical responsive ${!prev ? 'disabled' : ''}" ${!prev ? 'style="pointer-events:none;"' : ''}>
+      <a href="${prev ? `reader.html?id=${prev.id}&novel=${novelId}` : '#'}"
+         class="fill max vertical responsive ${!prev ? 'disabled' : ''}"
+         ${!prev ? 'style="pointer-events:none;"' : ''}
+         ${prev ? `onclick="navigateTo(event,'${prev.id}')"` : ''}>
         <i>arrow_back</i>
         <span>Previous</span>
       </a>
@@ -134,7 +156,10 @@ function renderChapter(chapter) {
         <i>list</i>
         <span>Chapters</span>
       </a>
-      <a href="${nextHref}" class="fill vertical max responsive ${!next ? 'disabled' : ''}" ${!next ? 'style="pointer-events:none;"' : ''}>
+      <a href="${next ? `reader.html?id=${next.id}&novel=${novelId}` : '#'}"
+         class="fill vertical max responsive ${!next ? 'disabled' : ''}"
+         ${!next ? 'style="pointer-events:none;"' : ''}
+         ${next ? `onclick="navigateTo(event,'${next.id}')"` : ''}>
         <span>Next</span>
         <i>arrow_forward</i>
       </a>
@@ -142,13 +167,38 @@ function renderChapter(chapter) {
   `;
 }
 
+// ── Navigate without a full page reload, using the cache ──
+async function navigateTo(event, targetChapterId) {
+  event.preventDefault();
+
+  const newUrl = `reader.html?id=${targetChapterId}&novel=${novelId}`;
+  window.history.pushState({}, '', newUrl);
+
+  document.getElementById('reader-body').innerHTML = '<div class="loading">Loading chapter...</div>';
+
+  const chapter = await fetchChapter(targetChapterId);
+  if (!chapter || !chapter.id) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  currentChapter = chapter;
+  document.title = chapter.title + ' - TommyTranslates';
+  renderChapter(chapter);
+  prefetchSurroundingChapters();
+  window.scrollTo(0, 0);
+}
+
 function prefetchSurroundingChapters() {
-  const idx = allChapters.findIndex(c => c.id === chapterId);
+  const idx = allChapters.findIndex(c => c.id === currentChapter.id);
   if (idx === -1) return;
 
   [idx - 1, idx + 1, idx + 2, idx + 3].forEach(i => {
     if (i >= 0 && i < allChapters.length) {
-      fetch('/api/chapter/' + allChapters[i].id, { priority: 'low' }).catch(() => {});
+      const targetId = allChapters[i].id;
+      if (!chapterCache[targetId]) {
+        fetchChapter(targetId);
+      }
     }
   });
 }
